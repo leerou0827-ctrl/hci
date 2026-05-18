@@ -40,6 +40,7 @@ dependencies:
   url_launcher: ^6.2.0
   video_player: ^2.8.1
   intl: ^0.19.0  # 👈 新增这一行，用于日期格式化 (DateFormat)
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -68,3 +69,5 @@ flutter:
     - assets/me.jpg
     - assets/image.png
     - assets/bluesky.mp4
+    - assets/logo_body.png
+    - assets/logo_dots.png
