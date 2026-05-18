@@ -1,63 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// 引入你的各个页面
+// 1. 引入你的各个页面文件
 import 'home_page.dart';
 import 'academic_page.dart';
 import 'scan_page.dart';
 import 'notification_page.dart';
-import 'profile/profile_page.dart';
+import 'profile_page.dart';
+import 'splash_page.dart';
 import 'login_page.dart';
-import 'theme/app_colors.dart'; // 引入颜色库
 
 void main() {
   runApp(const DigitalClassroomApp());
 }
 
+// 定义全局 Key，方便在子页面（如 ProfilePage）通过 mainGlobalKey.currentState?.logout() 调用注销方法
 final GlobalKey<MainEntryPageState> mainGlobalKey = GlobalKey<MainEntryPageState>();
-class DigitalClassroomApp extends StatefulWidget {
+
+const Color kPrimaryBlue = Color(0xFF0422A7);
+const Color kBackgroundColor = Color(0xFFF4F6FC);
+
+class DigitalClassroomApp extends StatelessWidget {
   const DigitalClassroomApp({super.key});
-
-  @override
-  State<DigitalClassroomApp> createState() => _DigitalClassroomAppState();
-}
-
-class _DigitalClassroomAppState extends State<DigitalClassroomApp> {
-  // 方案 1：默认跟随系统
-  ThemeMode _themeMode = ThemeMode.system;
-
-  void updateThemeMode(ThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Digital Classroom',
-
-      // 亮色主题配置
       theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        extensions: [lightColors], // 挂载亮色包
-        scaffoldBackgroundColor: lightColors.background,
+        primaryColor: kPrimaryBlue,
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: kPrimaryBlue,
+            primary: kPrimaryBlue,
+            secondary: const Color(0xFF64B5F6),
+            surface: Colors.white),
+        scaffoldBackgroundColor: kBackgroundColor,
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
-      ),
-
-      // 暗色主题配置
-      darkTheme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
-        extensions: [darkColors], // 挂载暗色包
-        scaffoldBackgroundColor: darkColors.background,
-        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
       ),
-
-      themeMode: _themeMode,
-      home: const LoginPage(),
+      // 2. 修改：App 启动时先进入登录页面 
+      home: const SplashPage(),
     );
   }
 }
@@ -68,7 +51,6 @@ class MainEntryPage extends StatefulWidget {
   @override
   State<MainEntryPage> createState() => MainEntryPageState();
 }
-
 
 class MainEntryPageState extends State<MainEntryPage> {
   int _selectedIndex = 0;
@@ -81,12 +63,21 @@ class MainEntryPageState extends State<MainEntryPage> {
     const ProfilePage(),
   ];
 
+  // 3. 新增：注销方法
+  // 这个方法会清空所有的页面路由栈，并跳转回登录页
   void logout() {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
+      (route) => false, // 这行代码负责清空所有历史路由，让用户无法通过“返回”回到主页
     );
+  }
+
+  // 切换 Tab 的公开方法
+  void switchToTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   void _onItemTapped(int index) {
@@ -94,43 +85,35 @@ class MainEntryPageState extends State<MainEntryPage> {
       _selectedIndex = index;
     });
   }
-  void switchToTab(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    // 这里的 colors 会根据当前是白天还是黑夜自动切换
-    final colors = context.colors;
-
+    // 如果选中扫码（Index 2），全屏显示 ScanPage
     if (_selectedIndex == 2) {
       return const ScanPage();
     }
 
     return Scaffold(
-      backgroundColor: colors.background, // 动态背景色
+      backgroundColor: kBackgroundColor,
       resizeToAvoidBottomInset: false,
       body: _pages[_selectedIndex],
-
+      // 悬浮扫码按钮
       floatingActionButton: SizedBox(
         width: 75,
         height: 75,
         child: FloatingActionButton(
           onPressed: () => _onItemTapped(2),
-          backgroundColor: colors.brandPrimary, // 动态品牌色
+          backgroundColor: kPrimaryBlue,
           shape: const CircleBorder(),
           elevation: 4,
           child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
       bottomNavigationBar: BottomAppBar(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         height: 70,
-        color: colors.surface, // 动态底栏背景
+        color: Colors.white,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         child: Row(
@@ -138,7 +121,7 @@ class MainEntryPageState extends State<MainEntryPage> {
           children: <Widget>[
             _buildNavItem(Icons.home, 'Home', 0),
             _buildNavItem(Icons.menu_book, 'Academic', 1),
-            const SizedBox(width: 40),
+            const SizedBox(width: 40), // 为悬浮按钮留出的空间
             _buildNavItem(Icons.notifications_none, 'Notification', 3),
             _buildNavItem(Icons.person_outline, 'Profile', 4),
           ],
@@ -149,9 +132,7 @@ class MainEntryPageState extends State<MainEntryPage> {
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isSelected = _selectedIndex == index;
-    // 使用 context.colors 确保图标和文字颜色也会随主题变化
-    Color color = isSelected ? context.colors.brandPrimary : context.colors.secondaryText;
-
+    Color color = isSelected ? kPrimaryBlue : Colors.grey;
     return InkWell(
       onTap: () => _onItemTapped(index),
       borderRadius: BorderRadius.circular(30),
@@ -167,7 +148,8 @@ class MainEntryPageState extends State<MainEntryPage> {
                   style: TextStyle(
                       color: color,
                       fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal))
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal))
             ]),
       ),
     );
