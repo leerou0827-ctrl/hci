@@ -7,6 +7,7 @@ import 'academic_page.dart';
 import 'scan_page.dart';
 import 'notification_page.dart';
 import 'profile/profile_page.dart';
+import 'splash_page.dart';
 import 'login_page.dart';
 import 'theme/app_colors.dart'; // 引入颜色库
 
@@ -14,7 +15,9 @@ void main() {
   runApp(const DigitalClassroomApp());
 }
 
-final GlobalKey<MainEntryPageState> mainGlobalKey = GlobalKey<MainEntryPageState>();
+final GlobalKey<MainEntryPageState> mainGlobalKey =
+    GlobalKey<MainEntryPageState>();
+
 class DigitalClassroomApp extends StatefulWidget {
   const DigitalClassroomApp({super.key});
 
@@ -23,7 +26,7 @@ class DigitalClassroomApp extends StatefulWidget {
 }
 
 class _DigitalClassroomAppState extends State<DigitalClassroomApp> {
-  // 方案 1：默认跟随系统
+  // 默认跟随系统主题
   ThemeMode _themeMode = ThemeMode.system;
 
   void updateThemeMode(ThemeMode mode) {
@@ -42,7 +45,7 @@ class _DigitalClassroomAppState extends State<DigitalClassroomApp> {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        extensions: [lightColors], // 挂载亮色包
+        extensions: [lightColors],
         scaffoldBackgroundColor: lightColors.background,
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
       ),
@@ -51,13 +54,13 @@ class _DigitalClassroomAppState extends State<DigitalClassroomApp> {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        extensions: [darkColors], // 挂载暗色包
+        extensions: [darkColors],
         scaffoldBackgroundColor: darkColors.background,
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
       ),
 
       themeMode: _themeMode,
-      home: const LoginPage(),
+      home: const SplashPage(),
     );
   }
 }
@@ -68,7 +71,6 @@ class MainEntryPage extends StatefulWidget {
   @override
   State<MainEntryPage> createState() => MainEntryPageState();
 }
-
 
 class MainEntryPageState extends State<MainEntryPage> {
   int _selectedIndex = 0;
@@ -85,7 +87,7 @@ class MainEntryPageState extends State<MainEntryPage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -94,6 +96,7 @@ class MainEntryPageState extends State<MainEntryPage> {
       _selectedIndex = index;
     });
   }
+
   void switchToTab(int index) {
     setState(() {
       _selectedIndex = index;
@@ -110,27 +113,25 @@ class MainEntryPageState extends State<MainEntryPage> {
     }
 
     return Scaffold(
-      backgroundColor: colors.background, // 动态背景色
+      backgroundColor: colors.background,
       resizeToAvoidBottomInset: false,
       body: _pages[_selectedIndex],
-
       floatingActionButton: SizedBox(
         width: 75,
         height: 75,
         child: FloatingActionButton(
           onPressed: () => _onItemTapped(2),
-          backgroundColor: colors.brandPrimary, // 动态品牌色
+          backgroundColor: colors.brandPrimary,
           shape: const CircleBorder(),
           elevation: 4,
           child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
       bottomNavigationBar: BottomAppBar(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         height: 70,
-        color: colors.surface, // 动态底栏背景
+        color: colors.surface,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         child: Row(
@@ -148,9 +149,9 @@ class MainEntryPageState extends State<MainEntryPage> {
   }
 
   Widget _buildNavItem(IconData icon, String label, int index) {
-    bool isSelected = _selectedIndex == index;
-    // 使用 context.colors 确保图标和文字颜色也会随主题变化
-    Color color = isSelected ? context.colors.brandPrimary : context.colors.secondaryText;
+    final isSelected = _selectedIndex == index;
+    final color =
+        isSelected ? context.colors.brandPrimary : context.colors.secondaryText;
 
     return InkWell(
       onTap: () => _onItemTapped(index),
@@ -158,17 +159,21 @@ class MainEntryPageState extends State<MainEntryPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 26),
-              const SizedBox(height: 2),
-              Text(label,
-                  style: TextStyle(
-                      color: color,
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal))
-            ]),
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
