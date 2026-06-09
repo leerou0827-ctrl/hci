@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'main.dart'; // 必须导入 main.dart 以使用 mainGlobalKey
+import 'theme/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,12 +12,28 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _userController = TextEditingController();
   final _passController = TextEditingController();
+  bool _obscurePassword = true;
 
   void _doLogin() {
-    if (_userController.text == "admin" && _passController.text == "1234") {
+    final username = _userController.text.trim().toLowerCase();
+    final password = _passController.text;
+
+    DashboardRole? role;
+    if (username == "student" && password == "1234") {
+      role = DashboardRole.student;
+    } else if (username == "lecturer" && password == "5678") {
+      role = DashboardRole.lecturer;
+    }
+
+    if (role != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainEntryPage(key: mainGlobalKey)),
+        MaterialPageRoute(
+          builder: (context) => MainEntryPage(
+            key: mainGlobalKey,
+            role: role!,
+          ),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -26,24 +43,50 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    _userController.dispose();
+    _passController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.school, size: 80, color: Color(0xFF0422A7)),
+            Icon(Icons.school, size: 80, color: colors.brandPrimary),
             const SizedBox(height: 40),
             TextField(
               controller: _userController,
-              decoration: const InputDecoration(labelText: "Username", border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: "Username", border: OutlineInputBorder()),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _passController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password", border: OutlineInputBorder()),
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: "Password",
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                  color: colors.secondaryText,
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 30),
             SizedBox(
@@ -51,8 +94,10 @@ class _LoginPageState extends State<LoginPage> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _doLogin,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0422A7)),
-                child: const Text("LOGIN", style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.brandPrimary),
+                child:
+                    const Text("LOGIN", style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -101,7 +146,7 @@ class LogoutPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Dashboard"),
-        automaticallyImplyLeading: false, 
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: Column(
@@ -115,7 +160,8 @@ class LogoutPage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             OutlinedButton.icon(
-              onPressed: () => _showLogoutDialog(context), // Trigger confirmation
+              onPressed: () =>
+                  _showLogoutDialog(context), // Trigger confirmation
               icon: const Icon(Icons.logout),
               label: const Text("Logout"),
               style: OutlinedButton.styleFrom(

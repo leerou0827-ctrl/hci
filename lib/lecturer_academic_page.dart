@@ -8,146 +8,175 @@ const Color kAccentBlue = Color(0xFF006BFF);
 const Color kBackgroundColor = Color(0xFFF5F8FE);
 const Color kTextDark = Color(0xFF071A52);
 
-class AcademicPage extends StatefulWidget {
-  const AcademicPage({super.key});
+class LecturerAcademicPage extends StatefulWidget {
+  const LecturerAcademicPage({super.key});
 
   @override
-  State<AcademicPage> createState() => _AcademicPageState();
+  State<LecturerAcademicPage> createState() => _LecturerAcademicPageState();
 }
 
-class _AcademicPageState extends State<AcademicPage> {
+class _LecturerAcademicPageState extends State<LecturerAcademicPage> {
   late final PageController _semesterController;
   late int _currentSemesterIndex;
 
-  final List<Map<String, String>> _studentSemesters = const [
+  final List<Map<String, String>> _lecturerSemesters = const [
     {
-      "title": "Semester 1",
+      "title": "2024 Sem 1",
       "status": "Past Semester",
-      "cpa": "3.96",
-      "classes": "5",
-      "credits": "20",
+      "courses": "3",
+      "students": "118",
+      "materials": "15",
     },
     {
-      "title": "Semester 2",
+      "title": "2024 Sem 2",
       "status": "Past Semester",
-      "cpa": "3.97",
-      "classes": "5",
-      "credits": "19",
+      "courses": "4",
+      "students": "142",
+      "materials": "18",
     },
     {
-      "title": "Semester 3",
+      "title": "2024 Sem 3",
+      "status": "Past Semester",
+      "courses": "3",
+      "students": "96",
+      "materials": "12",
+    },
+    {
+      "title": "2025 Sem 1",
       "status": "Current Semester",
-      "cpa": "3.98",
-      "classes": "5",
-      "credits": "20",
+      "courses": "4",
+      "students": "156",
+      "materials": "20",
     },
     {
-      "title": "Semester 4",
+      "title": "2025 Sem 2",
       "status": "Next Semester",
-      "cpa": "-",
-      "classes": "4",
-      "credits": "20",
-    },
-    {
-      "title": "Semester 5",
-      "status": "Next Semester",
-      "cpa": "-",
-      "classes": "-",
-      "credits": "-",
+      "courses": "3",
+      "students": "116",
+      "materials": "9",
     },
   ];
 
-  final List<List<Map<String, dynamic>>> _studentCoursesBySemester = [
+  final List<List<Map<String, dynamic>>> _lecturerCoursesBySemester = [
     [
       {
-        "code": "BIC10204",
-        "name": "Algorithm",
-        "lecturer": "Malik",
-        "grade": "A",
-        "attendance": "100%",
+        "code": "BIT101",
+        "name": "Programming Fundamentals",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "36",
       },
       {
-        "code": "BIC10503",
-        "name": "Computer Architecture",
-        "lecturer": "Sapiee",
-        "grade": "A",
-        "attendance": "99%",
+        "code": "BIT112",
+        "name": "Digital Logic",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "2",
+        "students": "40",
       },
     ],
     [
       {
-        "code": "BIC10404",
-        "name": "Data Structure",
-        "lecturer": "Nordiana",
-        "grade": "A",
-        "attendance": "100%",
+        "code": "BIT202",
+        "name": "Information Systems",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "34",
       },
       {
         "code": "BIC21003",
         "name": "System Analysis and Design",
-        "lecturer": "Faradila",
-        "grade": "A",
-        "attendance": "98%",
-      },
-    ],
-    [
-      {
-        "code": "BIC20803",
-        "name": "Operating System",
-        "lecturer": "Nayef",
-        "grade": "A+",
-        "attendance": "100%",
-      },
-      {
-        "code": "BIC20904",
-        "name": "Object-Oriented Programing",
-        "lecturer": "Faradila",
-        "grade": "A",
-        "attendance": "98%",
-      },
-      {
-        "code": "BIM30503",
-        "name": "Human Computer Interaction",
-        "lecturer": "Hana",
-        "grade": "A+",
-        "attendance": "100%",
-      },
-      {
-        "code": "BIS20503",
-        "name": "Software Security",
-        "lecturer": "Hidayah",
-        "grade": "A",
-        "attendance": "99%",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "2",
+        "students": "38",
       },
     ],
     [
       {
         "code": "BIC21303",
         "name": "Computer Networking",
-        "lecturer": "Rahmi",
-        "grade": "-",
-        "attendance": "100%",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "32",
       },
       {
-        "code": "BIC21404",
-        "name": "Database",
-        "lecturer": "Zana",
-        "grade": "-",
-        "attendance": "80%",
+        "code": "BIT203",
+        "name": "Database Systems",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "2",
+        "students": "34",
+      },
+      {
+        "code": "BIT221",
+        "name": "Web Programming",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "3",
+        "students": "30",
       },
     ],
-    [],
+    [
+      {
+        "code": "BIC21303",
+        "name": "Computer Networking",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "38",
+      },
+      {
+        "code": "BIT203",
+        "name": "Database Systems",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "2",
+        "students": "42",
+      },
+      {
+        "code": "BIT221",
+        "name": "Web Programming",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "3",
+        "students": "36",
+      },
+      {
+        "code": "BIT301",
+        "name": "Software Engineering",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "40",
+      },
+    ],
+    [
+      {
+        "code": "BIT401",
+        "name": "Final Year Project",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "1",
+        "students": "38",
+      },
+      {
+        "code": "BIT322",
+        "name": "Software Testing",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "2",
+        "students": "40",
+      },
+      {
+        "code": "BIT305",
+        "name": "Mobile Application Development",
+        "lecturer": "Dr. Sofia Najwa",
+        "section": "3",
+        "students": "38",
+      },
+    ],
   ];
 
-  List<Map<String, String>> get _semesters => _studentSemesters;
+  List<Map<String, String>> get _semesters => _lecturerSemesters;
 
   List<List<Map<String, dynamic>>> get _coursesBySemester =>
-      _studentCoursesBySemester;
+      _lecturerCoursesBySemester;
 
   @override
   void initState() {
     super.initState();
-    _currentSemesterIndex = 2;
+    _currentSemesterIndex = 3;
     _semesterController = PageController(
       viewportFraction: 0.78,
       initialPage: _currentSemesterIndex,
@@ -341,7 +370,7 @@ class _AcademicPageState extends State<AcademicPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            "Keep going, you're doing great!",
+            "Manage your classes with ease!",
             style: GoogleFonts.poppins(
               fontSize: 15,
               color: const Color(0xFF46537A),
@@ -354,18 +383,18 @@ class _AcademicPageState extends State<AcademicPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _simpleInfo(
-                "Current CPA",
-                semester["cpa"]!,
+                "Courses",
+                semester["courses"]!,
               ),
               _verticalDivider(),
               _simpleInfo(
-                "Classes",
-                semester["classes"]!,
+                "Students",
+                semester["students"]!,
               ),
               _verticalDivider(),
               _simpleInfo(
-                "Credits",
-                semester["credits"]!,
+                "Materials",
+                semester["materials"]!,
               ),
             ],
           ),
@@ -428,6 +457,7 @@ class _AcademicPageState extends State<AcademicPage> {
           context,
           MaterialPageRoute(
             builder: (_) => AcademicClassPage(
+              isLecturer: true,
               courseData: Map<String, String>.from(
                 course.map((key, value) => MapEntry(key, value.toString())),
               ),
@@ -467,7 +497,7 @@ class _AcademicPageState extends State<AcademicPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    course["lecturer"],
+                    course["code"],
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: const Color(0xFF7A859F),
@@ -481,7 +511,7 @@ class _AcademicPageState extends State<AcademicPage> {
               child: Column(
                 children: [
                   Text(
-                    "Attendance",
+                    "Section",
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: const Color(0xFF7A859F),
@@ -489,7 +519,7 @@ class _AcademicPageState extends State<AcademicPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    course["attendance"],
+                    course["section"],
                     style: GoogleFonts.poppins(
                       color: kPrimaryBlue,
                       fontWeight: FontWeight.bold,
@@ -509,7 +539,7 @@ class _AcademicPageState extends State<AcademicPage> {
               child: Column(
                 children: [
                   Text(
-                    "Grade",
+                    "Students",
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: const Color(0xFF7A859F),
@@ -517,7 +547,7 @@ class _AcademicPageState extends State<AcademicPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    course["grade"],
+                    course["students"],
                     style: GoogleFonts.poppins(
                       color: kPrimaryBlue,
                       fontWeight: FontWeight.bold,
