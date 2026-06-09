@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'academic_class.dart';
 
 const Color kPrimaryBlue = Color(0xFF0422A7);
@@ -16,10 +15,10 @@ class AcademicPage extends StatefulWidget {
 }
 
 class _AcademicPageState extends State<AcademicPage> {
-  late final PageController _semesterController;
-  late int _currentSemesterIndex;
+  late PageController _semesterController;
+  int _currentSemesterIndex = 3;
 
-  final List<Map<String, String>> _studentSemesters = const [
+  final List<Map<String, String>> _semesters = [
     {
       "title": "Semester 1",
       "status": "Past Semester",
@@ -36,15 +35,15 @@ class _AcademicPageState extends State<AcademicPage> {
     },
     {
       "title": "Semester 3",
-      "status": "Current Semester",
+      "status": "Past Semester",
       "cpa": "3.98",
       "classes": "5",
       "credits": "20",
     },
     {
       "title": "Semester 4",
-      "status": "Next Semester",
-      "cpa": "-",
+      "status": "Current Semester",
+      "cpa": "3.98",
       "classes": "4",
       "credits": "20",
     },
@@ -57,7 +56,7 @@ class _AcademicPageState extends State<AcademicPage> {
     },
   ];
 
-  final List<List<Map<String, dynamic>>> _studentCoursesBySemester = [
+  final List<List<Map<String, dynamic>>> _coursesBySemester = [
     [
       {
         "code": "BIC10204",
@@ -69,9 +68,30 @@ class _AcademicPageState extends State<AcademicPage> {
       {
         "code": "BIC10503",
         "name": "Computer Architecture",
-        "lecturer": "Sapiee",
+          "lecturer": "Sapiee",
         "grade": "A",
         "attendance": "99%",
+      },
+      {
+        "code": "BIC21102",
+        "name": "Professional Ethics And Occupational",
+        "lecturer": "Ezak",
+        "grade": "A-",
+        "attendance": "97%",
+      },
+      {
+        "code": "UHB13102",
+        "name": "English For General Communication",
+        "lecturer": "Liza",
+        "grade": "A",
+        "attendance": "98%",
+      },
+      {
+        "code": "UQB10102",
+        "name": "Integrity And Anti-Corruption",
+        "lecturer": "Khairol",
+        "grade": "A+",
+        "attendance": "100%",
       },
     ],
     [
@@ -83,11 +103,32 @@ class _AcademicPageState extends State<AcademicPage> {
         "attendance": "100%",
       },
       {
+        "code": "UQI11202",
+        "name": "Philosophy and Current Issues",
+        "lecturer": "Kamal",
+        "grade": "A+",
+        "attendance": "99%",
+      },
+      {
         "code": "BIC21003",
         "name": "System Analysis and Design",
         "lecturer": "Faradila",
         "grade": "A",
         "attendance": "98%",
+      },
+      {
+        "code": "BIS10103",
+        "name": "Information Security Fundamentals",
+        "lecturer": "Bakiah",
+        "grade": "A-",
+        "attendance": "97%",
+      },
+      {
+        "code": "BIC31502",
+        "name": "Creativity and Innovation ",
+        "lecturer": "Suhaila",
+        "grade": "A",
+        "attendance": "100%",
       },
     ],
     [
@@ -133,21 +174,29 @@ class _AcademicPageState extends State<AcademicPage> {
         "name": "Database",
         "lecturer": "Zana",
         "grade": "-",
-        "attendance": "80%",
+        "attendance": "98%",
+      },
+      {
+        "code": "BIS20404",
+        "name": "Cryptography",
+        "lecturer": "Ziadah",
+        "grade": "-",
+        "attendance": "100%",
+      },
+      {
+        "code": "BIS20503",
+        "name": "Computer Crime And Digital Forensics",
+        "lecturer": "Azma",
+        "grade": "-",
+        "attendance": "99%",
       },
     ],
     [],
   ];
 
-  List<Map<String, String>> get _semesters => _studentSemesters;
-
-  List<List<Map<String, dynamic>>> get _coursesBySemester =>
-      _studentCoursesBySemester;
-
   @override
   void initState() {
     super.initState();
-    _currentSemesterIndex = 2;
     _semesterController = PageController(
       viewportFraction: 0.78,
       initialPage: _currentSemesterIndex,
@@ -173,7 +222,9 @@ class _AcademicPageState extends State<AcademicPage> {
         .clamp(0, _semesters.length - 1);
 
     if (nextIndex != _currentSemesterIndex) {
-      setState(() => _currentSemesterIndex = nextIndex);
+      setState(() {
+        _currentSemesterIndex = nextIndex;
+      });
     }
   }
 
@@ -205,7 +256,7 @@ class _AcademicPageState extends State<AcademicPage> {
     final currentCourses = _coursesBySemester[_currentSemesterIndex];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 18, bottom: 120),
+      padding: const EdgeInsets.only(top: 18, bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,14 +265,18 @@ class _AcademicPageState extends State<AcademicPage> {
           _buildDots(),
           const SizedBox(height: 22),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Text(
-              "My Classes",
-              style: GoogleFonts.poppins(
-                color: kTextDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Stack(
+              children: [
+                Text(
+                  "My Classes",
+                  style: GoogleFonts.poppins(
+                    color: kTextDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 18),
@@ -231,9 +286,9 @@ class _AcademicPageState extends State<AcademicPage> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 30),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: currentCourses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 18),
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 return _buildCourseCard(currentCourses[index]);
               },
@@ -245,7 +300,7 @@ class _AcademicPageState extends State<AcademicPage> {
 
   Widget _buildSemesterCarousel() {
     return SizedBox(
-      height: 310,
+      height: 300,
       child: PageView.builder(
         controller: _semesterController,
         physics: const BouncingScrollPhysics(),
@@ -284,17 +339,20 @@ class _AcademicPageState extends State<AcademicPage> {
     Map<String, String> semester, {
     required bool isSelected,
   }) {
-    final isCurrent = semester["status"] == "Current Semester";
+    final bool isCurrent = semester["status"] == "Current Semester";
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      padding: const EdgeInsets.all(30),
+      margin: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 10,
+      ),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isSelected ? kAccentBlue : const Color(0xFFE8EEF8),
-          width: isSelected ? 2.4 : 1,
+          width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -309,12 +367,18 @@ class _AcademicPageState extends State<AcademicPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.school_outlined, color: kPrimaryBlue, size: 32),
+              const Icon(
+                Icons.school_outlined,
+                color: kPrimaryBlue,
+                size: 32,
+              ),
               const SizedBox(width: 12),
               if (isCurrent)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAF3FF),
                     borderRadius: BorderRadius.circular(30),
@@ -330,26 +394,28 @@ class _AcademicPageState extends State<AcademicPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Text(
             semester["title"]!,
             style: GoogleFonts.poppins(
-              fontSize: 30,
+              fontSize: 28,
               fontWeight: FontWeight.w700,
               color: kPrimaryBlue,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            "Keep going, you're doing great!",
+            "Keep going, you're doing great!✨ ",
             style: GoogleFonts.poppins(
               fontSize: 15,
               color: const Color(0xFF46537A),
             ),
           ),
           const Spacer(),
-          Divider(color: Colors.grey.shade300),
-          const SizedBox(height: 16),
+          Divider(
+            color: Colors.grey.shade300,
+          ),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -397,7 +463,7 @@ class _AcademicPageState extends State<AcademicPage> {
   Widget _buildEmptyClasses() {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 30),
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -406,7 +472,11 @@ class _AcademicPageState extends State<AcademicPage> {
       ),
       child: Column(
         children: [
-          Icon(Icons.menu_book_outlined, color: Colors.grey.shade400, size: 36),
+          Icon(
+            Icons.menu_book_outlined,
+            color: Colors.grey.shade400,
+            size: 36,
+          ),
           const SizedBox(height: 12),
           Text(
             "No classes for this semester",
@@ -421,7 +491,9 @@ class _AcademicPageState extends State<AcademicPage> {
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course) {
+  Widget _buildCourseCard(
+    Map<String, dynamic> course,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -429,14 +501,19 @@ class _AcademicPageState extends State<AcademicPage> {
           MaterialPageRoute(
             builder: (_) => AcademicClassPage(
               courseData: Map<String, String>.from(
-                course.map((key, value) => MapEntry(key, value.toString())),
+                course.map(
+                  (key, value) => MapEntry(key, value.toString()),
+                ),
               ),
             ),
           ),
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 20,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -457,8 +534,6 @@ class _AcademicPageState extends State<AcademicPage> {
                 children: [
                   Text(
                     course["name"],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -502,7 +577,9 @@ class _AcademicPageState extends State<AcademicPage> {
             Container(
               width: 1,
               height: 48,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
               color: Colors.grey.shade300,
             ),
             Expanded(
@@ -533,7 +610,10 @@ class _AcademicPageState extends State<AcademicPage> {
     );
   }
 
-  Widget _simpleInfo(String title, String value) {
+  Widget _simpleInfo(
+    String title,
+    String value,
+  ) {
     return Column(
       children: [
         Text(
@@ -557,6 +637,10 @@ class _AcademicPageState extends State<AcademicPage> {
   }
 
   Widget _verticalDivider() {
-    return Container(width: 1, height: 42, color: Colors.grey.shade300);
+    return Container(
+      width: 1,
+      height: 42,
+      color: Colors.grey.shade300,
+    );
   }
 }

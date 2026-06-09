@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,15 +7,14 @@ import 'main.dart';
 // 颜色常量
 const Color kHeaderColor = Color(0xFF001C55);
 const Color kBorderColor = Color(0xFFEEEEEE);
-const Color kLinkColor = Color(0xFFA93226); // 红色链接
+const Color kLinkColor = Color(0xFFA93226);
 const Color kPrimaryBlue = Color(0xFF0422A7);
-const Color kStatusFull = Color(0xFFE53935); // 红色 (FULL)
-const Color kStatusAvailable = Color(0xFF43A047); // 绿色 (Available)
-const Color kNameBlue = Color(0xFF1976D2); // 名字蓝
-const Color kBackgroundColor = Color(0xFFF4F6FC); // 背景色
+const Color kStatusFull = Color(0xFFE53935);
+const Color kStatusAvailable = Color(0xFF43A047);
+const Color kNameBlue = Color(0xFF1976D2);
+const Color kBackgroundColor = Color(0xFFF4F6FC);
 
-// 其他颜色常量 (用于 Tab 和 详情页)
-const Color kTabShadowColor = Color(0x0D9E9E9E);
+// 其他颜色常量
 const Color kCoordOrange = Color(0xFFEF6C00);
 const Color kCoordBlue = Color(0xFF1565C0);
 const Color kCoordGreen = Color(0xFF2E7D32);
@@ -25,20 +22,11 @@ const Color kCoordYellow = Color(0xFFFFCA28);
 const Color kCoordInfo = Color(0xFF455A64);
 const Color kTrashRed = Color(0xFFC62828);
 const Color kSelectionBg = Color(0xFFE3F2FD);
-const Color kLightBlueBg = Color(0x1A0422A7);
 
-// =======================================================
-//           ACADEMIC CLASS PAGE (Host Scaffold)
-// =======================================================
 class AcademicClassPage extends StatefulWidget {
   final Map<String, String> courseData;
-  final bool isLecturer;
 
-  const AcademicClassPage({
-    super.key,
-    required this.courseData,
-    this.isLecturer = false,
-  });
+  const AcademicClassPage({super.key, required this.courseData});
 
   @override
   State<AcademicClassPage> createState() => _AcademicClassPageState();
@@ -49,7 +37,9 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
   String? _openedFolderName;
   Map<String, String>? _openedActivityData;
   final Set<int> _selectedIndices = {};
-  bool _isCourseMenuExpanded = false;
+
+  // ZUS 风格状态：控制侧边栏是否展开显示文字详情
+  bool _isCategoryExpanded = false;
 
   // 底部导航栏的当前索引 (Academic 是 1)
   final int _bottomNavIndex = 1;
@@ -59,54 +49,44 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
-        toolbarHeight: 62,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+          ),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "${widget.courseData['code']} : ${widget.courseData['name']}",
           style: GoogleFonts.poppins(
-            color: Colors.black,
-            fontWeight: FontWeight.w700,
-            fontSize: 22,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+              color: Colors.black, fontWeight: FontWeight.w600, fontSize: 18),
         ),
         centerTitle: true,
       ),
 
-      // --- FAB (Scan) 修复跳转 ---
+      // --- 原本设计的 FAB (Scan) ---
       floatingActionButton: SizedBox(
         width: 75,
         height: 75,
         child: FloatingActionButton(
           onPressed: () {
-            // 1. 切换主页 Tab 到 Scan (Index 2)
             mainGlobalKey.currentState?.switchToTab(2);
-            // 2. 关闭当前详情页，返回主页
             Navigator.of(context).popUntil((route) => route.isFirst);
           },
           backgroundColor: kPrimaryBlue,
           shape: const CircleBorder(),
           elevation: 4,
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
-            ],
-          ),
+          child:
+              const Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // --- Bottom Navigation Bar ---
+      // --- 原本设计的 Bottom Navigation Bar ---
       bottomNavigationBar: BottomAppBar(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         height: 70,
@@ -118,393 +98,283 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
           children: <Widget>[
             _buildNavItem(Icons.home_outlined, 'Home', 0),
             _buildNavItem(Icons.menu_book, 'Academic', 1),
-            const SizedBox(width: 40), // 中间留白
+            const SizedBox(width: 40),
             _buildNavItem(Icons.notifications_outlined, 'Notification', 3),
             _buildNavItem(Icons.person_outline, 'Profile', 4),
           ],
         ),
       ),
 
-      body: Column(
+      body: Stack(
         children: [
-          // 1. 顶部 Tab 菜单栏
-          // 2. 视觉隔断
-          if (_showLegacyTopSpacer &&
-              [
-                "Learning Materials",
-                "Past Year Questions",
-                "Individual Activities"
-              ].contains(_currentDetailTab))
-            Container(
-              height: 16,
-              width: double.infinity,
-              color: kBackgroundColor,
+          Row(
+            children: [
+              _buildSidebar(expanded: false),
+              Expanded(child: _buildContentArea()),
+            ],
+          ),
+          if (_isCategoryExpanded) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  setState(() {
+                    _isCategoryExpanded = false;
+                  });
+                },
+                child: Container(color: Colors.transparent),
+              ),
             ),
-
-          // 3. 内容区域
-          Expanded(child: _buildCourseBody()),
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: _buildSidebar(expanded: true),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  // --- 关键修改：导航跳转逻辑 ---
-  Widget _buildCourseBody() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final sideRailWidth = constraints.maxWidth < 430 ? 94.0 : 104.0;
-        final contentLeft = sideRailWidth + 16;
-        final expandedWidth =
-            constraints.maxWidth < 430 ? constraints.maxWidth - 32 : 375.0;
-
-        return Stack(
-          children: [
-            Positioned.fill(
-              left: contentLeft,
-              right: 14,
-              top: 0,
-              bottom: 0,
-              child: _buildClassContentSurface(),
-            ),
-            Positioned(
-              left: 16,
-              top: 16,
-              bottom: 20,
-              width: sideRailWidth - 16,
-              child: _buildCollapsedCourseMenu(),
-            ),
-            if (_isCourseMenuExpanded)
-              Positioned(
-                left: 16,
-                top: 16,
-                bottom: 20,
-                width: expandedWidth,
-                child: _buildExpandedCourseMenu(),
-              ),
-          ],
-        );
-      },
+  Widget _buildContentArea() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 16,
+        right: 12,
+        bottom: 16,
+      ),
+      child: Container(
+        color: kBackgroundColor,
+        child: _buildTabContent(),
+      ),
     );
   }
 
-  bool get _showLegacyTopSpacer => false;
-
-  Widget _buildClassContentSurface() {
-    return Container(
-      color: kBackgroundColor,
-      child: _buildTabContent(),
-    );
-  }
-
-  List<_CourseDetailTab> get _courseTabs => [
-        const _CourseDetailTab(
-          title: "Stream",
-          shortTitle: "Stream",
-          expandedTitle: "Stream",
-          icon: Icons.chat_bubble_outline,
-        ),
-        const _CourseDetailTab(
-          title: "Learning Materials",
-          shortTitle: "Material",
-          expandedTitle: "Learning Materia...",
-          icon: Icons.computer,
-        ),
-        const _CourseDetailTab(
-          title: "Past Year Questions",
-          shortTitle: "Past Year",
-          expandedTitle: "Past Year Questi...",
-          icon: Icons.history,
-        ),
-        const _CourseDetailTab(
-          title: "Individual Activities",
-          shortTitle: "Individual",
-          expandedTitle: "Individual Activit...",
-          icon: Icons.person_outline,
-        ),
-        const _CourseDetailTab(
-          title: "Group Activities",
-          shortTitle: "Group",
-          expandedTitle: "Group Activities",
-          icon: Icons.people_outline,
-        ),
-        const _CourseDetailTab(
-          title: "Assessment",
-          shortTitle: "Assess",
-          expandedTitle: "Assessment",
-          icon: Icons.quiz_outlined,
-        ),
-        const _CourseDetailTab(
-          title: "Marks",
-          shortTitle: "Marks",
-          expandedTitle: "Marks",
-          icon: Icons.bar_chart,
-        ),
-        if (widget.isLecturer)
-          const _CourseDetailTab(
-            title: "Attendance",
-            shortTitle: "Attendance",
-            expandedTitle: "Attendance",
-            icon: Icons.fact_check_outlined,
-          ),
-        const _CourseDetailTab(
-          title: "Lecturer Profile",
-          shortTitle: "Profile",
-          expandedTitle: "Lecturer Profile",
-          icon: Icons.badge_outlined,
-        ),
-      ];
-
-  void _selectCourseTab(String title) {
-    setState(() {
-      _currentDetailTab = title;
-      _openedFolderName = null;
-      _openedActivityData = null;
-      _selectedIndices.clear();
-    });
-  }
-
-  Widget _buildCollapsedCourseMenu() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+  Widget _buildSidebar({required bool expanded}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: expanded ? 300 : 75,
+      margin: const EdgeInsets.only(
+        left: 12,
+        top: 16,
+        bottom: 16,
+        right: 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(34),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: expanded ? 0.12 : 0.05),
+            blurRadius: expanded ? 24 : 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         children: [
+          const SizedBox(height: 14),
           Expanded(
-            child: ListView(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 8),
-              physics: const ClampingScrollPhysics(),
-              children: _courseTabs.map(_buildCollapsedCourseMenuItem).toList(),
+              child: Column(
+                children: [
+                  _buildSideItem("Stream", Icons.chat_bubble_outline,
+                      expanded: expanded),
+                  _buildSideItem("Learning Materials", Icons.computer,
+                      expanded: expanded),
+                  _buildSideItem("Past Year Questions", Icons.history,
+                      expanded: expanded),
+                  _buildSideItem("Individual Activities", Icons.person_outline,
+                      expanded: expanded),
+                  _buildSideItem("Group Activities", Icons.people_outline,
+                      expanded: expanded),
+                  _buildSideItem("Assessment", Icons.quiz_outlined,
+                      expanded: expanded),
+                  _buildSideItem("Marks", Icons.bar_chart, expanded: expanded),
+                  _buildSideItem("Lecturer Profile", Icons.badge_outlined,
+                      expanded: expanded),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Divider(
+              height: 1,
+              color: Colors.grey.shade200,
             ),
           ),
           const SizedBox(height: 8),
-          IconButton(
-            tooltip: "Open course menu",
-            onPressed: () {
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () {
               setState(() {
-                _isCourseMenuExpanded = true;
+                _isCategoryExpanded = !expanded;
               });
             },
-            icon: const Icon(Icons.apps, color: kPrimaryBlue, size: 32),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCollapsedCourseMenuItem(_CourseDetailTab item) {
-    final isActive = _currentDetailTab == item.title;
-    final color = isActive ? kPrimaryBlue : Colors.grey.shade500;
-
-    return InkWell(
-      onTap: () => _selectCourseTab(item.title),
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
+            child: Container(
+              width: expanded ? 180 : 54,
+              height: 54,
+              margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFFF1F3FF) : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(item.icon, color: color, size: 26),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.shortTitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                color: color,
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandedCourseMenu() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(68, 28, 68, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(34),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.only(bottom: 12),
-              physics: const ClampingScrollPhysics(),
-              itemCount: _courseTabs.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                return _buildExpandedCourseMenuItem(_courseTabs[index]);
-              },
-            ),
-          ),
-          const Divider(height: 1, color: kBorderColor),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 68,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFFF0F2FF),
-                foregroundColor: kPrimaryBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              onPressed: () {
-                setState(() {
-                  _isCourseMenuExpanded = false;
-                });
-              },
-              child: const Icon(Icons.close, size: 30),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandedCourseMenuItem(_CourseDetailTab item) {
-    final isActive = _currentDetailTab == item.title;
-
-    return InkWell(
-      onTap: () => _selectCourseTab(item.title),
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        height: 58,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF3F5FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: isActive ? kPrimaryBlue : const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(8),
+                color: expanded
+                    ? kPrimaryBlue.withValues(alpha: 0.08)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(
-                item.icon,
-                color: isActive ? Colors.white : Colors.grey.shade500,
-                size: 25,
+                expanded ? Icons.close : Icons.grid_view_rounded,
+                color: kPrimaryBlue,
+                size: 26,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                item.expandedTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.poppins(
-                  color: isActive ? kHeaderColor : Colors.grey.shade700,
-                  fontSize: 16,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
-    bool isSelected = _bottomNavIndex == index;
-    Color color = isSelected ? kPrimaryBlue : Colors.grey;
+  // --- 侧边栏子项：图标 + 平行的 Detail 文字 ---
+  Widget _buildSideItem(String label, IconData icon, {required bool expanded}) {
+    final bool isActive = _currentDetailTab == label;
 
     return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
       onTap: () {
-        if (index == 0) {
-          // Home: 切换 Tab 并退出当前页
-          mainGlobalKey.currentState?.switchToTab(0);
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        } else if (index == 1) {
-          // Academic: 当前就是 Academic 体系，这里可以选择只是 pop 回列表，或者不做操作
-          // 如果想回列表：Navigator.pop(context);
-        } else if (index == 3) {
-          // Notification: 切换 Tab 并退出当前页
-          mainGlobalKey.currentState?.switchToTab(3);
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        } else if (index == 4) {
-          // Profile: 切换 Tab 并退出当前页
-          mainGlobalKey.currentState?.switchToTab(4);
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
+        setState(() {
+          _currentDetailTab = label;
+          _isCategoryExpanded = false;
+          _openedFolderName = null;
+          _openedActivityData = null;
+          _selectedIndices.clear();
+        });
       },
-      borderRadius: BorderRadius.circular(30),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
+      child: Container(
+        width: expanded ? 190 : 66,
+        margin: const EdgeInsets.symmetric(
+          horizontal: 6,
+          vertical: 2,
         ),
+        padding: EdgeInsets.symmetric(
+          horizontal: expanded ? 12 : 6,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFF4F7FF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: expanded
+            ? Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isActive ? kPrimaryBlue : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isActive ? Colors.white : Colors.grey.shade500,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.w500,
+                        color: isActive ? kPrimaryBlue : Colors.grey.shade700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isActive ? kPrimaryBlue : Colors.transparent,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isActive ? Colors.white : Colors.grey.shade500,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _shortSideLabel(label),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 8.5,
+                      height: 1.05,
+                      fontWeight: FontWeight.w500,
+                      color: isActive ? kPrimaryBlue : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 
+  String _shortSideLabel(String label) {
+    switch (label) {
+      case "Stream":
+        return "Stream";
+      case "Learning Materials":
+        return "Material";
+      case "Past Year Questions":
+        return "Past Year";
+      case "Individual Activities":
+        return "Individual";
+      case "Group Activities":
+        return "Group";
+      case "Assessment":
+        return "Assess";
+      case "Marks":
+        return "Marks";
+      case "Lecturer Profile":
+        return "Lecturer";
+      default:
+        return label;
+    }
+  }
+
+  // --- 导航内容分发逻辑 (完整恢复) ---
   Widget _buildTabContent() {
     switch (_currentDetailTab) {
       case "Stream":
         return _buildStreamContent(widget.courseData['lecturer'] ?? "Lecturer");
 
       case "Learning Materials":
-        if (_openedFolderName == null) {
-          return _buildMaterialsFolderList();
-        } else {
-          return _buildMaterialsFileList();
-        }
+        return _openedFolderName == null
+            ? _buildMaterialsFolderList()
+            : _buildMaterialsFileList();
 
       case "Past Year Questions":
         return _buildPastYearQuestionsContent();
 
       case "Individual Activities":
-        if (_openedActivityData == null) {
-          return _buildIndividualActivitiesList();
-        } else {
-          return _buildIndividualActivityDetail();
-        }
+        return _openedActivityData == null
+            ? _buildIndividualActivitiesList()
+            : _buildIndividualActivityDetail();
 
       case "Group Activities":
         return const GroupActivitiesTab();
@@ -515,9 +385,6 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
       case "Marks":
         return const MarksTab();
 
-      case "Attendance":
-        return const StudentAttendanceTab();
-
       case "Lecturer Profile":
         return const LecturerProfileTab();
 
@@ -526,126 +393,396 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     }
   }
 
-  void _handleSelectAll(int itemCount) {
-    setState(() {
-      _selectedIndices.clear();
-      for (int i = 0; i < itemCount; i++) {
-        _selectedIndices.add(i);
-      }
-    });
+  Widget _buildCheckbox(bool isSelected, int index) {
+    return InkWell(
+      onTap: () => setState(() {
+        if (isSelected) {
+          _selectedIndices.remove(index);
+        } else {
+          _selectedIndices.add(index);
+        }
+      }),
+      child: SizedBox(
+          width: 30,
+          child: Icon(
+              isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+              color: isSelected ? kPrimaryBlue : Colors.grey.shade400,
+              size: 20)),
+    );
   }
 
-  void _handleClearSelection() {
-    setState(() {
-      _selectedIndices.clear();
-    });
+  Widget _buildSmallIconButton(IconData icon, Color color) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration:
+          BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      child: Icon(icon, color: Colors.white, size: 16),
+    );
   }
 
-  // =======================================================
-  //       VIEW: PAST YEAR QUESTIONS
-  // =======================================================
-  Widget _buildPastYearQuestionsContent() {
-    final List<Map<String, String>> pastYears = [
-      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2025"},
-      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2025"},
-      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2024"},
-      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2023"},
-      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "Jan-2022"},
-      {"title": "Discrete Structure - BIC10103", "year": "2021"},
+  // --- 业务页面构建方法 (完整恢复) ---
+
+  Widget _buildStreamContent(String lecturerName) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildStreamPost(
+            lecturerName: lecturerName,
+            date: "04-12-2025 09:00:00 AM [Just Now]",
+            content:
+                'IMPORTANT: The Mid-term Test will be held on 15th Dec 2025.',
+            isNew: true),
+        const SizedBox(height: 16),
+        _buildStreamPost(
+            lecturerName: lecturerName,
+            date: "02-12-2025 12:11:08 PM [2 Days ago]",
+            content:
+                'Learning Material in TOPIC "Chapter 3: Relations and Functions" uploaded.',
+            isNew: true),
+      ],
+    );
+  }
+
+  Widget _buildStreamPost(
+      {required String lecturerName,
+      required String date,
+      required String content,
+      bool isNew = false}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+          borderRadius: BorderRadius.circular(4)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Color(0xFFE91E63),
+                  child: Icon(Icons.person, color: Colors.white)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text(lecturerName,
+                          style: GoogleFonts.poppins(
+                              color: const Color(0xFF2196F3),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14)),
+                      const SizedBox(width: 4),
+                      Text("created a new post",
+                          style: GoogleFonts.poppins(
+                              color: Colors.black87, fontSize: 14)),
+                      if (isNew) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(2)),
+                            child: const Text("NEW",
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)))
+                      ]
+                    ]),
+                    const SizedBox(height: 2),
+                    Text(date,
+                        style: GoogleFonts.poppins(
+                            fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+              padding: const EdgeInsets.only(left: 52.0),
+              child: Text(content,
+                  style: GoogleFonts.poppins(
+                      fontSize: 13, color: Colors.black87, height: 1.4))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaterialsFolderList() {
+    final List<Map<String, String>> folders = [
+      {
+        "no": "1",
+        "title": "Chapter 1: BASIC OF LOGIC AND PROOF",
+        "size": "2.8MB",
+        "date": "13 Oct 2025"
+      },
+      {
+        "no": "2",
+        "title": "Chapter 2: Relations and Functions",
+        "size": "3.1MB",
+        "date": "20 Nov 2025"
+      },
+    ];
+    return Column(children: [
+      _buildListHeaderTitle("Material List"),
+      _buildActionBar(itemCount: folders.length),
+      _buildMobileMaterialHeader(),
+      Expanded(
+          child: ListView.builder(
+        itemCount: folders.length,
+        itemBuilder: (ctx, i) => InkWell(
+          onTap: () => setState(() => _openedFolderName = folders[i]["title"]),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: kBorderColor),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCheckbox(false, i),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4DE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.folder, color: Colors.orange),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        folders[i]["title"]!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 6,
+                        children: [
+                          _buildMaterialMetaChip(
+                            Icons.tag,
+                            "No. ${folders[i]["no"]}",
+                          ),
+                          _buildMaterialMetaChip(
+                            Icons.storage_outlined,
+                            folders[i]["size"]!,
+                          ),
+                          _buildMaterialMetaChip(
+                            Icons.calendar_today_outlined,
+                            folders[i]["date"]!,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+              ],
+            ),
+          ),
+        ),
+      )),
+    ]);
+  }
+
+  Widget _buildMaterialsFileList() {
+    return Column(children: [
+      _buildBreadcrumb(
+          items: ["Material List", _openedFolderName!],
+          onTapRoot: () => setState(() => _openedFolderName = null)),
+      const Expanded(child: Center(child: Text("Files appearing here..."))),
+    ]);
+  }
+
+  Widget _buildMobileMaterialHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Row(
+        children: [
+          Text(
+            "Folders",
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: kHeaderColor,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            "Tap to open",
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaterialMetaChip(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: Colors.grey.shade600),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            color: Colors.grey.shade700,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIndividualActivitiesList() {
+    final List<Map<String, String>> activities = [
+      {
+        "no": "1.",
+        "activity": "Tutorial 1",
+        "section": "ALL",
+        "dueDate": "---",
+        "created": "13 Oct 2025\n@ 10:40 AM"
+      },
+      {
+        "no": "2.",
+        "activity": "Tutorial 2(a)",
+        "section": "ALL",
+        "dueDate": "27 Oct 2025 @ 6:00 AM",
+        "created": "21 Oct 2025\n@ 10:41 AM",
+        "file": "tutorial02-28a-29.pdf"
+      },
+      {
+        "no": "3.",
+        "activity": "Tutorial 2(b)",
+        "section": "ALL",
+        "dueDate": "---",
+        "created": "2 Nov 2025\n@ 9:05 PM"
+      },
+      {
+        "no": "4.",
+        "activity": "Assignment 1: Mathematical Induction",
+        "section": "ALL",
+        "dueDate": "30 Dec 2025 @ 11:59 PM",
+        "created": "4 Nov 2025\n@ 3:32 PM",
+        "file": "assignment1_math.pdf"
+      },
     ];
 
     return Column(
       children: [
+        _buildBreadcrumb(items: ["Activity List", "Folder"]),
+        const Divider(height: 1, color: kBorderColor),
         Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row(
+          color: kHeaderColor,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: const Row(
             children: [
-              const Icon(Icons.history_edu, color: Colors.grey, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                "Past Year Questions List",
-                style: GoogleFonts.poppins(
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14),
-              ),
+              SizedBox(
+                  width: 40,
+                  child: Text("No.",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold))),
+              Expanded(
+                  flex: 3,
+                  child: Text("Activities (Click)",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold))),
+              Expanded(
+                  flex: 1,
+                  child: Text("Section",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold))),
+              Expanded(
+                  flex: 2,
+                  child: Text("Due Date",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold))),
+              Expanded(
+                  flex: 2,
+                  child: Text("Created",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold))),
             ],
           ),
         ),
-        const Divider(height: 1, color: kBorderColor),
-        _buildActionBar(itemCount: pastYears.length),
         Expanded(
           child: ListView.separated(
-            itemCount: pastYears.length,
-            separatorBuilder: (context, index) =>
+            itemCount: activities.length,
+            separatorBuilder: (ctx, i) =>
                 const Divider(height: 1, color: kBorderColor),
             itemBuilder: (context, index) {
-              final item = pastYears[index];
-              final isSelected = _selectedIndices.contains(index);
-
+              final item = activities[index];
               return InkWell(
                 onTap: () {
                   setState(() {
-                    if (isSelected) {
-                      _selectedIndices.remove(index);
-                    } else {
-                      _selectedIndices.add(index);
-                    }
+                    _openedActivityData = item;
                   });
                 },
                 child: Container(
-                  color: isSelected ? kSelectionBg : Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 16.0, horizontal: 20.0),
+                  color: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 30,
-                        child: Icon(
-                            isSelected
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color: isSelected
-                                ? kPrimaryBlue
-                                : Colors.grey.shade400,
-                            size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.0,
-                          children: [
-                            Text(
-                              item["title"]!.toUpperCase(),
+                          width: 40,
+                          child: Text(item["no"]!,
                               style: GoogleFonts.poppins(
-                                color: const Color(0xFF1565C0),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                                decorationColor: const Color(0xFF1565C0),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(4),
-                                  border:
-                                      Border.all(color: Colors.grey.shade300)),
-                              child: Text(
-                                item["year"]!,
-                                style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Colors.black87))),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          item["activity"]!,
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: kLinkColor),
                         ),
                       ),
+                      Expanded(
+                          flex: 1,
+                          child: Text(item["section"]!,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12, color: Colors.black87))),
+                      Expanded(
+                          flex: 2,
+                          child: Text(item["dueDate"]!,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12, color: Colors.black87))),
+                      Expanded(
+                          flex: 2,
+                          child: Text(item["created"]!,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12, color: Colors.black87))),
                     ],
                   ),
                 ),
@@ -657,9 +794,6 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     );
   }
 
-  // =======================================================
-  //       VIEW: INDIVIDUAL ACTIVITY DETAIL
-  // =======================================================
   Widget _buildIndividualActivityDetail() {
     final activity = _openedActivityData!;
     final dueDateStr = activity['dueDate']!;
@@ -720,7 +854,7 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
                                         fontWeight: FontWeight.bold)),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 2),
                             Text(
                               dueDateStr == "---" ? "No Due Date" : dueDateStr,
                               style: GoogleFonts.poppins(
@@ -917,211 +1051,46 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     );
   }
 
-  // =======================================================
-  //       VIEW: INDIVIDUAL ACTIVITIES LIST
-  // =======================================================
-  Widget _buildIndividualActivitiesList() {
-    final List<Map<String, String>> activities = [
-      {
-        "no": "1.",
-        "activity": "Tutorial 1",
-        "section": "ALL",
-        "dueDate": "---",
-        "created": "13 Oct 2025\n@ 10:40 AM"
-      },
-      {
-        "no": "2.",
-        "activity": "Tutorial 2(a)",
-        "section": "ALL",
-        "dueDate": "27 Oct 2025 @ 6:00 AM",
-        "created": "21 Oct 2025\n@ 10:41 AM",
-        "file": "tutorial02-28a-29.pdf"
-      },
-      {
-        "no": "3.",
-        "activity": "Tutorial 2(b)",
-        "section": "ALL",
-        "dueDate": "---",
-        "created": "2 Nov 2025\n@ 9:05 PM"
-      },
-      {
-        "no": "4.",
-        "activity": "Assignment 1: Mathematical Induction",
-        "section": "ALL",
-        "dueDate": "30 Dec 2025 @ 11:59 PM",
-        "created": "4 Nov 2025\n@ 3:32 PM",
-        "file": "assignment1_math.pdf"
-      },
+  Widget _buildPastYearQuestionsContent() {
+    final List<Map<String, String>> pastYears = [
+      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2025"},
+      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2025"},
+      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2024"},
+      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "2023"},
+      {"title": "DISCRETE STRUCTURE - BIC 10103", "year": "Jan-2022"},
+      {"title": "Discrete Structure - BIC10103", "year": "2021"},
     ];
 
     return Column(
       children: [
-        _buildBreadcrumb(items: ["Activity List", "Folder"]),
-        const Divider(height: 1, color: kBorderColor),
         Container(
-          color: kHeaderColor,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: const Row(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
             children: [
-              SizedBox(
-                  width: 40,
-                  child: Text("No.",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))),
-              Expanded(
-                  flex: 3,
-                  child: Text("Activities (Click)",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))),
-              Expanded(
-                  flex: 1,
-                  child: Text("Section",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))),
-              Expanded(
-                  flex: 2,
-                  child: Text("Due Date",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))),
-              Expanded(
-                  flex: 2,
-                  child: Text("Created",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))),
+              const Icon(Icons.history_edu, color: Colors.grey, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                "Past Year Questions List",
+                style: GoogleFonts.poppins(
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14),
+              ),
             ],
           ),
         ),
-        Expanded(
-          child: ListView.separated(
-            itemCount: activities.length,
-            separatorBuilder: (ctx, i) =>
-                const Divider(height: 1, color: kBorderColor),
-            itemBuilder: (context, index) {
-              final item = activities[index];
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _openedActivityData = item;
-                  });
-                },
-                child: Container(
-                  color: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                          width: 40,
-                          child: Text(item["no"]!,
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: Colors.black87))),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          item["activity"]!,
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                              color: kLinkColor),
-                        ),
-                      ),
-                      Expanded(
-                          flex: 1,
-                          child: Text(item["section"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.black87))),
-                      Expanded(
-                          flex: 2,
-                          child: Text(item["dueDate"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.black87))),
-                      Expanded(
-                          flex: 2,
-                          child: Text(item["created"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.black87))),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- Reuse Components ---
-  Widget _buildMaterialsFolderList() {
-    final List<Map<String, String>> folders = [
-      {
-        "no": "4",
-        "title": "Chapter 3: Relations and Functions [2]",
-        "size": "3.2MB",
-        "date": "20 Nov 2025"
-      },
-      {
-        "no": "2",
-        "title": "Chapter 2: Mathematical Induction [1]",
-        "size": "1.5MB",
-        "date": "05 Nov 2025"
-      },
-      {
-        "no": "1",
-        "title": "Chapter 1: BASIC OF LOGIC AND PROOF [2]",
-        "size": "2.8MB",
-        "date": "13 Oct 2025"
-      },
-      {
-        "no": "3",
-        "title": "Chapter 0: Introduction [1]",
-        "size": "500KB",
-        "date": "01 Oct 2025"
-      },
-    ];
-    return _buildGenericList(folders, isFolder: true);
-  }
-
-  Widget _buildMaterialsFileList() {
-    final List<Map<String, String>> files = [
-      {
-        "no": "2",
-        "name": "chapter1b_predicateaquantifier.pptx",
-        "size": "1312.4KB",
-        "date": "2 Nov 2025 @ 9:15 PM"
-      },
-      {
-        "no": "1",
-        "name": "chapter1a_logicaproof.pptx",
-        "size": "1579.2KB",
-        "date": "13 Oct 2025 @ 9:52 AM"
-      },
-    ];
-    return Column(
-      children: [
-        _buildBreadcrumb(
-          items: ["Material List", _openedFolderName ?? ""],
-          onTapRoot: () {
-            setState(() {
-              _openedFolderName = null;
-              _selectedIndices.clear();
-            });
-          },
-        ),
         const Divider(height: 1, color: kBorderColor),
-        _buildActionBar(itemCount: files.length),
-        _buildTableHeader(showSizeDate: true),
+        _buildActionBar(itemCount: pastYears.length),
         Expanded(
           child: ListView.separated(
-            itemCount: files.length,
-            separatorBuilder: (ctx, i) =>
+            itemCount: pastYears.length,
+            separatorBuilder: (context, index) =>
                 const Divider(height: 1, color: kBorderColor),
             itemBuilder: (context, index) {
-              final file = files[index];
+              final item = pastYears[index];
               final isSelected = _selectedIndices.contains(index);
+
               return InkWell(
                 onTap: () {
                   setState(() {
@@ -1134,44 +1103,56 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
                 },
                 child: Container(
                   color: isSelected ? kSelectionBg : Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 20.0),
                   child: Row(
                     children: [
-                      _buildCheckbox(isSelected),
                       SizedBox(
-                          width: 50,
-                          child: Center(
-                              child: Text(file["no"]!,
-                                  style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13)))),
+                        width: 30,
+                        child: Icon(
+                            isSelected
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            color: isSelected
+                                ? kPrimaryBlue
+                                : Colors.grey.shade400,
+                            size: 20),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Row(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8.0,
                           children: [
-                            const Icon(Icons.description,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                                child: Text(file["name"]!,
-                                    style: GoogleFonts.poppins(
-                                        fontSize: 13, color: Colors.black87),
-                                    overflow: TextOverflow.ellipsis)),
+                            Text(
+                              item["title"]!.toUpperCase(),
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF1565C0),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                                decorationColor: const Color(0xFF1565C0),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border:
+                                      Border.all(color: Colors.grey.shade300)),
+                              child: Text(
+                                item["year"]!,
+                                style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 48),
-                      SizedBox(
-                          width: 80,
-                          child: Text(file["size"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.grey.shade700))),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                          width: 130,
-                          child: Text(file["date"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.grey.shade700))),
                     ],
                   ),
                 ),
@@ -1183,112 +1164,85 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     );
   }
 
-  Widget _buildGenericList(List<Map<String, String>> items,
-      {bool isFolder = false}) {
-    return Column(
-      children: [
-        _buildListHeaderTitle("Material List"),
-        const Divider(height: 1, color: kBorderColor),
-        _buildActionBar(itemCount: items.length),
-        _buildTableHeader(showSizeDate: true),
-        Expanded(
-          child: ListView.separated(
-            itemCount: items.length,
-            separatorBuilder: (ctx, i) =>
-                const Divider(height: 1, color: kBorderColor),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final isSelected = _selectedIndices.contains(index);
-              return InkWell(
-                onTap: () {
-                  if (isFolder && item["title"]!.startsWith("Chapter 1")) {
-                    setState(() {
-                      _openedFolderName = "Chapter 1: BASIC OF LOGIC AND PROOF";
-                      _selectedIndices.clear();
-                    });
-                  }
-                },
-                child: Container(
-                  color: isSelected ? kSelectionBg : Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedIndices.remove(index);
-                            } else {
-                              _selectedIndices.add(index);
-                            }
-                          });
-                        },
-                        child: _buildCheckbox(isSelected),
-                      ),
-                      SizedBox(
-                          width: 50,
-                          child: Center(
-                              child: Text(item["no"]!,
-                                  style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13)))),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(isFolder ? Icons.folder : Icons.description,
-                                color: isFolder
-                                    ? const Color(0xFFFFC107)
-                                    : Colors.grey,
-                                size: 24),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                child: Text(item["title"]!,
-                                    style: GoogleFonts.poppins(
-                                        fontSize: 13, color: Colors.black87),
-                                    overflow: TextOverflow.ellipsis)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                      SizedBox(
-                          width: 80,
-                          child: Text(item["size"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.grey.shade700))),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                          width: 130,
-                          child: Text(item["date"]!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12, color: Colors.grey.shade700))),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- Common Widgets ---
-  Widget _buildCheckbox(bool isSelected) {
-    return SizedBox(
-      width: 30,
-      child: Icon(isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-          color: isSelected ? kPrimaryBlue : Colors.grey.shade400, size: 20),
-    );
-  }
-
-  Widget _buildSmallIconButton(IconData icon, Color color) {
+  // --- 基础 UI 组件 ---
+  Widget _buildListHeaderTitle(String title) {
     return Container(
-      width: 28,
-      height: 28,
-      decoration:
-          BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
-      child: Icon(icon, color: Colors.white, size: 16),
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          const Icon(Icons.folder_copy_outlined, color: Colors.grey, size: 20),
+          const SizedBox(width: 8),
+          Text(title,
+              style: GoogleFonts.poppins(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
+  void _handleSelectAll(int itemCount) {
+    setState(() {
+      _selectedIndices.clear();
+      for (int i = 0; i < itemCount; i++) {
+        _selectedIndices.add(i);
+      }
+    });
+  }
+
+  void _handleClearSelection() {
+    setState(() {
+      _selectedIndices.clear();
+    });
+  }
+
+  Widget _buildActionBar({required int itemCount}) {
+    return Container(
+      width: double.infinity, // 关键：让背景颜色铺满整行宽度
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start, // 确保内容靠左
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildActionButton(Icons.check_box_outline_blank, "Select All",
+              () => _handleSelectAll(itemCount)),
+          const SizedBox(width: 24), // 增加按钮之间的间距
+          _buildActionButton(
+              Icons.close, "Clear Selection", () => _handleClearSelection()),
+          const SizedBox(width: 24),
+          _buildActionButton(Icons.download, "Download Selected", () {
+            /* 逻辑 */
+          }),
+        ],
+      ),
+    );
+  }
+
+  // 辅助按钮组件（确保样式统一）
+  Widget _buildActionButton(IconData icon, String text, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: Colors.black87),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1344,219 +1298,28 @@ class _AcademicClassPageState extends State<AcademicClassPage> {
     );
   }
 
-  Widget _buildListHeaderTitle(String title) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        children: [
-          const Icon(Icons.folder_copy_outlined, color: Colors.grey, size: 20),
-          const SizedBox(width: 8),
-          Text(title,
-              style: GoogleFonts.poppins(
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionBar({required int itemCount}) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildActionButton(Icons.check_box_outline_blank, "Select All",
-                () => _handleSelectAll(itemCount)),
-            const SizedBox(width: 20),
-            _buildActionButton(
-                Icons.close, "Clear Selection", _handleClearSelection),
-            const SizedBox(width: 20),
-            _buildActionButton(Icons.download, "Download Selected", () {
-              /* Logic */
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTableHeader({bool showSizeDate = false}) {
-    return Container(
-      color: kHeaderColor,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Row(
-        children: [
-          const SizedBox(
-              width: 30,
-              child: Text("#",
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold))),
-          const SizedBox(
-              width: 50,
-              child: Center(
-                  child: Text("No.",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)))),
-          Expanded(
-              child: Text("File Name",
-                  style: GoogleFonts.poppins(
-                      color: Colors.white, fontWeight: FontWeight.bold))),
-          if (showSizeDate) ...[
-            const SizedBox(width: 48),
-            const SizedBox(
-                width: 80,
-                child: Text("Size",
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold))),
-            const SizedBox(width: 10),
-            const SizedBox(
-                width: 130,
-                child: Text("Date Add",
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold))),
-          ]
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String text, VoidCallback onTap) {
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    bool isSelected = _bottomNavIndex == index;
     return InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.black87),
-          const SizedBox(width: 6),
-          Text(text,
-              style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500)),
-        ],
-      ),
+      onTap: () {
+        if (index != 1) {
+          mainGlobalKey.currentState?.switchToTab(index);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      },
+      borderRadius: BorderRadius.circular(30),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: isSelected ? kPrimaryBlue : Colors.grey),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10, color: isSelected ? kPrimaryBlue : Colors.grey))
+      ]),
     );
   }
-
-  Widget _buildStreamContent(String lecturerName) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildStreamPost(
-            lecturerName: lecturerName,
-            date: "04-12-2025 09:00:00 AM [Just Now]",
-            content:
-                'IMPORTANT: The Mid-term Test will be held on 15th Dec 2025.',
-            isNew: true),
-        const SizedBox(height: 16),
-        _buildStreamPost(
-            lecturerName: lecturerName,
-            date: "02-12-2025 12:11:08 PM [2 Days ago]",
-            content:
-                'Learning Material in TOPIC "Chapter 3: Relations and Functions" uploaded.',
-            isNew: true),
-      ],
-    );
-  }
-
-  Widget _buildStreamPost(
-      {required String lecturerName,
-      required String date,
-      required String content,
-      bool isNew = false}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Color(0xFFE91E63),
-                  child: Icon(Icons.person, color: Colors.white)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: [
-                        Text(lecturerName,
-                            style: GoogleFonts.poppins(
-                                color: const Color(0xFF2196F3),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 17)),
-                        Text("created a new post",
-                            style: GoogleFonts.poppins(
-                                color: Colors.black87, fontSize: 17)),
-                        if (isNew)
-                          Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(2)),
-                              child: const Text("NEW",
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white))),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(date,
-                        style: GoogleFonts.poppins(
-                            fontSize: 11, color: Colors.grey)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Padding(
-              padding: const EdgeInsets.only(left: 65.0),
-              child: Text(content,
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, color: Colors.black87, height: 1.35))),
-        ],
-      ),
-    );
-  }
-}
-
-class _CourseDetailTab {
-  final String title;
-  final String shortTitle;
-  final String expandedTitle;
-  final IconData icon;
-
-  const _CourseDetailTab({
-    required this.title,
-    required this.shortTitle,
-    required this.expandedTitle,
-    required this.icon,
-  });
-}
-
-extension WidgetExt on Widget {
-  Widget height(double h) => SizedBox(height: h, child: this);
 }
 
 // =======================================================
-//           VIEW 5: GROUP ACTIVITIES (Main Tab)
+//           EXTERNAL TAB CLASSES (保持原本设计)
 // =======================================================
 class GroupActivitiesTab extends StatefulWidget {
   const GroupActivitiesTab({super.key});
@@ -1571,7 +1334,7 @@ class _GroupActivitiesTabState extends State<GroupActivitiesTab> {
 
   // 模拟当前登录的用户
   final Map<String, String> _currentUser = {
-    "name": "MY NAME (ME)", // 这里显示你的名字
+    "name": "MY NAME (ME)",
     "id": "AI248888"
   };
 
@@ -1594,7 +1357,7 @@ class _GroupActivitiesTabState extends State<GroupActivitiesTab> {
     },
     {
       "name": "GROUP 3",
-      "members": [], // Empty group
+      "members": [],
       "hasFiles": false,
     },
     {
@@ -1617,6 +1380,11 @@ class _GroupActivitiesTabState extends State<GroupActivitiesTab> {
       "hasFiles": true,
     }
   ];
+
+  bool _isAlreadyInAnyGroup() {
+    return _groups.any((group) =>
+        (group['members'] as List).any((m) => m['id'] == _currentUser['id']));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1801,11 +1569,23 @@ class _GroupActivitiesTabState extends State<GroupActivitiesTab> {
                 isMember: isMember,
                 hasFiles: group['hasFiles'],
                 onJoin: () {
-                  setState(() {
-                    if (members.length < 5) {
-                      group['members'].add(_currentUser);
-                    }
-                  });
+                  // --- 核心修改逻辑 ---
+                  if (_isAlreadyInAnyGroup()) {
+                    // 如果已经在别的组了，弹出警告
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            "You have already joined a group. Please quit your current group first."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  } else {
+                    setState(() {
+                      if (members.length < 5) {
+                        group['members'].add(_currentUser);
+                      }
+                    });
+                  }
                 },
                 onQuit: () {
                   setState(() {
@@ -2123,9 +1903,6 @@ class _GroupActivitiesTabState extends State<GroupActivitiesTab> {
   }
 }
 
-// =======================================================
-//           VIEW: ASSESSMENT TAB
-// =======================================================
 class AssessmentTab extends StatefulWidget {
   const AssessmentTab({super.key});
 
@@ -2228,9 +2005,6 @@ class _AssessmentTabState extends State<AssessmentTab> {
   }
 }
 
-// =======================================================
-//           VIEW: MARKS TAB
-// =======================================================
 class MarksTab extends StatelessWidget {
   const MarksTab({super.key});
 
@@ -2404,1218 +2178,6 @@ class MarksTab extends StatelessWidget {
   }
 }
 
-// =======================================================
-//           VIEW: STUDENT ATTENDANCE TAB
-// =======================================================
-class StudentAttendanceTab extends StatefulWidget {
-  const StudentAttendanceTab({super.key});
-
-  @override
-  State<StudentAttendanceTab> createState() => _StudentAttendanceTabState();
-}
-
-class _StudentAttendanceTabState extends State<StudentAttendanceTab> {
-  final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _fromController =
-      TextEditingController(text: '70');
-  final TextEditingController _toController =
-      TextEditingController(text: '100');
-
-  String _selectedMonth = 'May 2025';
-  String _appliedSearch = '';
-  double? _appliedFrom = 70;
-  double? _appliedTo = 100;
-  int _currentPage = 0;
-
-  static const int _pageSize = 6;
-
-  static const List<_StudentAttendanceRecord> _students = [
-    _StudentAttendanceRecord(
-      name: 'Rahmi',
-      matricNo: 'A21EC001',
-      attendancePercent: 100,
-    ),
-    _StudentAttendanceRecord(
-      name: 'Faradila',
-      matricNo: 'A21EC004',
-      attendancePercent: 94,
-    ),
-    _StudentAttendanceRecord(
-      name: 'Nayef',
-      matricNo: 'A21EC003',
-      attendancePercent: 89,
-    ),
-    _StudentAttendanceRecord(
-      name: 'Zana',
-      matricNo: 'A21EC002',
-      attendancePercent: 81,
-    ),
-    _StudentAttendanceRecord(
-      name: 'Azma',
-      matricNo: 'A21EC006',
-      attendancePercent: 76,
-    ),
-    _StudentAttendanceRecord(
-      name: 'Ziadh',
-      matricNo: 'A21EC005',
-      attendancePercent: 72,
-    ),
-  ];
-
-  static const Map<String, _MonthlyAttendanceData> _monthlyData = {
-    'March 2025': _MonthlyAttendanceData(
-      present: 24,
-      absent: 10,
-      totalStudents: 34,
-    ),
-    'April 2025': _MonthlyAttendanceData(
-      present: 28,
-      absent: 6,
-      totalStudents: 34,
-    ),
-    'May 2025': _MonthlyAttendanceData(
-      present: 26,
-      absent: 8,
-      totalStudents: 34,
-    ),
-    'June 2025': _MonthlyAttendanceData(
-      present: 30,
-      absent: 4,
-      totalStudents: 34,
-    ),
-  };
-
-  _MonthlyAttendanceData get _currentMonthData =>
-      _monthlyData[_selectedMonth] ?? _monthlyData.values.first;
-
-  List<_StudentAttendanceRecord> get _filteredStudents {
-    return _students.where((student) {
-      final matchesName = _appliedSearch.isEmpty ||
-          student.name.toLowerCase().contains(_appliedSearch.toLowerCase());
-      final matchesFrom =
-          _appliedFrom == null || student.attendancePercent >= _appliedFrom!;
-      final matchesTo =
-          _appliedTo == null || student.attendancePercent <= _appliedTo!;
-
-      return matchesName && matchesFrom && matchesTo;
-    }).toList();
-  }
-
-  int get _pageCount {
-    final count = (_filteredStudents.length / _pageSize).ceil();
-    return count == 0 ? 1 : count;
-  }
-
-  List<_StudentAttendanceRecord> get _visibleStudents {
-    final safePage = _currentPage.clamp(0, _pageCount - 1);
-    final start = safePage * _pageSize;
-    final end = math.min(start + _pageSize, _filteredStudents.length);
-    if (start >= _filteredStudents.length) {
-      return const [];
-    }
-    return _filteredStudents.sublist(start, end);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _fromController.dispose();
-    _toController.dispose();
-    super.dispose();
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _appliedSearch = _searchController.text.trim();
-      _appliedFrom = double.tryParse(_fromController.text.trim());
-      _appliedTo = double.tryParse(_toController.text.trim());
-
-      if (_appliedFrom != null &&
-          _appliedTo != null &&
-          _appliedFrom! > _appliedTo!) {
-        final temp = _appliedFrom;
-        _appliedFrom = _appliedTo;
-        _appliedTo = temp;
-        _fromController.text = _appliedFrom!.toStringAsFixed(0);
-        _toController.text = _appliedTo!.toStringAsFixed(0);
-      }
-
-      _currentPage = 0;
-    });
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _searchController.clear();
-      _fromController.text = '70';
-      _toController.text = '100';
-      _appliedSearch = '';
-      _appliedFrom = 70;
-      _appliedTo = 100;
-      _currentPage = 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final monthData = _currentMonthData;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(4, 16, 0, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Student Attendance',
-            style: GoogleFonts.poppins(
-              color: kHeaderColor,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Track and analyze attendance for this class.',
-            style: GoogleFonts.poppins(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 18),
-          _MonthlyAttendanceCard(
-            selectedMonth: _selectedMonth,
-            months: _monthlyData.keys.toList(),
-            data: monthData,
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _selectedMonth = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          _AttendanceSummaryGrid(data: monthData),
-          const SizedBox(height: 16),
-          _AttendanceRecordsCard(
-            searchController: _searchController,
-            fromController: _fromController,
-            toController: _toController,
-            visibleStudents: _visibleStudents,
-            totalFilteredStudents: _filteredStudents.length,
-            currentPage: _currentPage,
-            pageSize: _pageSize,
-            pageCount: _pageCount,
-            onApply: _applyFilters,
-            onClear: _clearFilters,
-            onPrevious: _currentPage == 0
-                ? null
-                : () {
-                    setState(() {
-                      _currentPage--;
-                    });
-                  },
-            onNext: _currentPage >= _pageCount - 1
-                ? null
-                : () {
-                    setState(() {
-                      _currentPage++;
-                    });
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MonthlyAttendanceCard extends StatelessWidget {
-  const _MonthlyAttendanceCard({
-    required this.selectedMonth,
-    required this.months,
-    required this.data,
-    required this.onChanged,
-  });
-
-  final String selectedMonth;
-  final List<String> months;
-  final _MonthlyAttendanceData data;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _AttendanceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  'Monthly Attendance Overview',
-                  style: GoogleFonts.poppins(
-                    color: kHeaderColor,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _MonthDropdown(
-                selectedMonth: selectedMonth,
-                months: months,
-                onChanged: onChanged,
-              ),
-            ],
-          ),
-          const SizedBox(height: 26),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 620;
-              final chartSize =
-                  math.min(isNarrow ? 210.0 : 240.0, constraints.maxWidth);
-
-              final chart = Center(
-                child: SizedBox.square(
-                  dimension: chartSize,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: Size.square(chartSize),
-                        painter: _AttendanceDonutPainter(
-                          presentPercent: data.averagePercent,
-                          presentColor: kPrimaryBlue,
-                          absentColor: const Color(0xFFDCE6F4),
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${data.averagePercent.toStringAsFixed(1)}%',
-                            style: GoogleFonts.poppins(
-                              color: kHeaderColor,
-                              fontSize: 27,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Average Attendance',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              color: Colors.grey.shade600,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-
-              final legend = _AttendanceLegend(data: data);
-
-              if (isNarrow) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    chart,
-                    const SizedBox(height: 22),
-                    legend,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: chart),
-                  const SizedBox(width: 26),
-                  SizedBox(width: 220, child: legend),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceSummaryGrid extends StatelessWidget {
-  const _AttendanceSummaryGrid({required this.data});
-
-  final _MonthlyAttendanceData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _AttendanceSummaryCard(
-        title: 'Average Attendance',
-        value: '${data.averagePercent.toStringAsFixed(1)}%',
-        icon: Icons.insights_outlined,
-        iconColor: kPrimaryBlue,
-        backgroundColor: const Color(0xFFEFF3FF),
-      ),
-      _AttendanceSummaryCard(
-        title: 'Present',
-        value: '${data.present}',
-        icon: Icons.check_circle_outline,
-        iconColor: const Color(0xFF1E63D6),
-        backgroundColor: const Color(0xFFEAF1FF),
-      ),
-      _AttendanceSummaryCard(
-        title: 'Absent',
-        value: '${data.absent}',
-        icon: Icons.cancel_outlined,
-        iconColor: const Color(0xFF6D7F95),
-        backgroundColor: const Color(0xFFF0F4F8),
-      ),
-      _AttendanceSummaryCard(
-        title: 'Total Students',
-        value: '${data.totalStudents}',
-        icon: Icons.groups_outlined,
-        iconColor: const Color(0xFF325B90),
-        backgroundColor: const Color(0xFFE8EEF7),
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth < 620 ? 2 : 4;
-        const spacing = 12.0;
-        final width =
-            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: cards
-              .map(
-                (card) => SizedBox(
-                  width: width,
-                  child: card,
-                ),
-              )
-              .toList(),
-        );
-      },
-    );
-  }
-}
-
-class _AttendanceRecordsCard extends StatelessWidget {
-  const _AttendanceRecordsCard({
-    required this.searchController,
-    required this.fromController,
-    required this.toController,
-    required this.visibleStudents,
-    required this.totalFilteredStudents,
-    required this.currentPage,
-    required this.pageSize,
-    required this.pageCount,
-    required this.onApply,
-    required this.onClear,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final TextEditingController searchController;
-  final TextEditingController fromController;
-  final TextEditingController toController;
-  final List<_StudentAttendanceRecord> visibleStudents;
-  final int totalFilteredStudents;
-  final int currentPage;
-  final int pageSize;
-  final int pageCount;
-  final VoidCallback onApply;
-  final VoidCallback onClear;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = totalFilteredStudents == 0 ? 0 : (currentPage * pageSize) + 1;
-    final end = math.min((currentPage + 1) * pageSize, totalFilteredStudents);
-
-    return _AttendanceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Student Attendance Records',
-            style: GoogleFonts.poppins(
-              color: kHeaderColor,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _AttendanceFilterRow(
-            searchController: searchController,
-            fromController: fromController,
-            toController: toController,
-            onApply: onApply,
-            onClear: onClear,
-          ),
-          const SizedBox(height: 18),
-          _AttendanceTable(
-              students: visibleStudents, rowOffset: currentPage * pageSize),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            alignment: WrapAlignment.spaceBetween,
-            children: [
-              Text(
-                totalFilteredStudents == 0
-                    ? 'Showing 0 of 0 students'
-                    : 'Showing $start to $end of $totalFilteredStudents students',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey.shade600,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _PaginationButton(
-                    icon: Icons.chevron_left,
-                    tooltip: 'Previous page',
-                    onPressed: onPrevious,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      '${currentPage + 1} / $pageCount',
-                      style: GoogleFonts.poppins(
-                        color: kHeaderColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  _PaginationButton(
-                    icon: Icons.chevron_right,
-                    tooltip: 'Next page',
-                    onPressed: onNext,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceFilterRow extends StatelessWidget {
-  const _AttendanceFilterRow({
-    required this.searchController,
-    required this.fromController,
-    required this.toController,
-    required this.onApply,
-    required this.onClear,
-  });
-
-  final TextEditingController searchController;
-  final TextEditingController fromController;
-  final TextEditingController toController;
-  final VoidCallback onApply;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 640;
-        final searchWidth = isNarrow
-            ? constraints.maxWidth
-            : math.max(220.0, constraints.maxWidth - 430);
-
-        return Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            SizedBox(
-              width: searchWidth,
-              child: _FilterTextField(
-                controller: searchController,
-                hintText: 'Search student',
-                icon: Icons.search,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => onApply(),
-              ),
-            ),
-            SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 10) / 2 : 90,
-              child: _FilterTextField(
-                controller: fromController,
-                hintText: 'From %',
-                icon: Icons.percent,
-                keyboardType: TextInputType.number,
-                onSubmitted: (_) => onApply(),
-              ),
-            ),
-            SizedBox(
-              width: isNarrow ? (constraints.maxWidth - 10) / 2 : 90,
-              child: _FilterTextField(
-                controller: toController,
-                hintText: 'To %',
-                icon: Icons.percent,
-                keyboardType: TextInputType.number,
-                onSubmitted: (_) => onApply(),
-              ),
-            ),
-            SizedBox(
-              height: 46,
-              child: ElevatedButton.icon(
-                onPressed: onApply,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.tune, size: 18),
-                label: Text(
-                  'Apply Filter',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 46,
-              width: 46,
-              child: Tooltip(
-                message: 'Reset filters',
-                child: IconButton(
-                  onPressed: onClear,
-                  icon: const Icon(Icons.refresh, size: 20),
-                  color: kPrimaryBlue,
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFF2F5FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _AttendanceTable extends StatelessWidget {
-  const _AttendanceTable({required this.students, required this.rowOffset});
-
-  final List<_StudentAttendanceRecord> students;
-  final int rowOffset;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: kBorderColor),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: 620,
-            child: Column(
-              children: [
-                Container(
-                  color: const Color(0xFFF5F7FA),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                  child: const Row(
-                    children: [
-                      _TableHeaderCell('#', width: 44),
-                      _TableHeaderCell('Student Name', flex: 3),
-                      _TableHeaderCell('Matric No.', flex: 2),
-                      _TableHeaderCell('Attendance %', flex: 2),
-                    ],
-                  ),
-                ),
-                if (students.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 34),
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.person_search_outlined,
-                          color: Colors.grey.shade400,
-                          size: 34,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No students match this filter.',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ...students.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final student = entry.value;
-                    return _AttendanceTableRow(
-                      index: rowOffset + index + 1,
-                      student: student,
-                      isEven: index.isEven,
-                    );
-                  }).toList(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AttendanceTableRow extends StatelessWidget {
-  const _AttendanceTableRow({
-    required this.index,
-    required this.student,
-    required this.isEven,
-  });
-
-  final int index;
-  final _StudentAttendanceRecord student;
-  final bool isEven;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: isEven ? Colors.white : const Color(0xFFFAFBFE),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 44,
-            child: Text(
-              '$index.',
-              style: GoogleFonts.poppins(
-                color: kHeaderColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              student.name,
-              style: GoogleFonts.poppins(
-                color: kHeaderColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              student.matricNo,
-              style: GoogleFonts.poppins(
-                color: Colors.grey.shade700,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              '${student.attendancePercent.toStringAsFixed(0)}%',
-              style: GoogleFonts.poppins(
-                color: kPrimaryBlue,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceSummaryCard extends StatelessWidget {
-  const _AttendanceSummaryCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-  });
-
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 118),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: iconColor, size: 21),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: kHeaderColor,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              color: Colors.grey.shade600,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttendanceLegend extends StatelessWidget {
-  const _AttendanceLegend({required this.data});
-
-  final _MonthlyAttendanceData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LegendItem(
-          color: kPrimaryBlue,
-          label: 'Present',
-          value: '${data.averagePercent.toStringAsFixed(1)}% (${data.present})',
-        ),
-        const SizedBox(height: 14),
-        _LegendItem(
-          color: const Color(0xFFDCE6F4),
-          label: 'Absent',
-          value: '${data.absentPercent.toStringAsFixed(1)}% (${data.absent})',
-        ),
-        const SizedBox(height: 18),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF6F8FC),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE7ECF5)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.groups_outlined, color: kPrimaryBlue, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Total Students',
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey.shade700,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Text(
-                '${data.totalStudents}',
-                style: GoogleFonts.poppins(
-                  color: kHeaderColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  final Color color;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              color: Colors.grey.shade700,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            color: kHeaderColor,
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MonthDropdown extends StatelessWidget {
-  const _MonthDropdown({
-    required this.selectedMonth,
-    required this.months,
-    required this.onChanged,
-  });
-
-  final String selectedMonth;
-  final List<String> months;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E9F2)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedMonth,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-          borderRadius: BorderRadius.circular(14),
-          style: GoogleFonts.poppins(
-            color: kHeaderColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-          items: months
-              .map(
-                (month) => DropdownMenuItem(
-                  value: month,
-                  child: Text(month),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterTextField extends StatelessWidget {
-  const _FilterTextField({
-    required this.controller,
-    required this.hintText,
-    required this.icon,
-    this.keyboardType,
-    this.textInputAction,
-    this.onSubmitted,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final ValueChanged<String>? onSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      onSubmitted: onSubmitted,
-      style: GoogleFonts.poppins(
-        color: kHeaderColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: const Color(0xFFF8FAFD),
-        prefixIcon: Icon(icon, size: 18, color: Colors.grey.shade500),
-        hintText: hintText,
-        hintStyle: GoogleFonts.poppins(
-          color: Colors.grey.shade500,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE3E8F0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE3E8F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryBlue, width: 1.2),
-        ),
-      ),
-    );
-  }
-}
-
-class _PaginationButton extends StatelessWidget {
-  const _PaginationButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 38,
-      height: 38,
-      child: Tooltip(
-        message: tooltip,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 20),
-          color: onPressed == null ? Colors.grey.shade400 : kPrimaryBlue,
-          style: IconButton.styleFrom(
-            backgroundColor: onPressed == null
-                ? const Color(0xFFF3F4F7)
-                : const Color(0xFFF2F5FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TableHeaderCell extends StatelessWidget {
-  const _TableHeaderCell(this.label, {this.flex, this.width});
-
-  final String label;
-  final int? flex;
-  final double? width;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Text(
-      label,
-      style: GoogleFonts.poppins(
-        color: kHeaderColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w800,
-      ),
-    );
-
-    if (width != null) {
-      return SizedBox(width: width, child: text);
-    }
-
-    return Expanded(flex: flex ?? 1, child: text);
-  }
-}
-
-class _AttendanceCard extends StatelessWidget {
-  const _AttendanceCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _AttendanceDonutPainter extends CustomPainter {
-  const _AttendanceDonutPainter({
-    required this.presentPercent,
-    required this.presentColor,
-    required this.absentColor,
-  });
-
-  final double presentPercent;
-  final Color presentColor;
-  final Color absentColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final strokeWidth = size.width * 0.16;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final basePaint = Paint()
-      ..color = absentColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    final presentPaint = Paint()
-      ..color = presentColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, basePaint);
-    canvas.drawArc(
-      rect,
-      -math.pi / 2,
-      math.pi * 2 * (presentPercent.clamp(0, 100) / 100),
-      false,
-      presentPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _AttendanceDonutPainter oldDelegate) {
-    return oldDelegate.presentPercent != presentPercent ||
-        oldDelegate.presentColor != presentColor ||
-        oldDelegate.absentColor != absentColor;
-  }
-}
-
-class _StudentAttendanceRecord {
-  const _StudentAttendanceRecord({
-    required this.name,
-    required this.matricNo,
-    required this.attendancePercent,
-  });
-
-  final String name;
-  final String matricNo;
-  final double attendancePercent;
-}
-
-class _MonthlyAttendanceData {
-  const _MonthlyAttendanceData({
-    required this.present,
-    required this.absent,
-    required this.totalStudents,
-  });
-
-  final int present;
-  final int absent;
-  final int totalStudents;
-
-  double get averagePercent =>
-      totalStudents == 0 ? 0 : (present / totalStudents) * 100;
-
-  double get absentPercent =>
-      totalStudents == 0 ? 0 : (absent / totalStudents) * 100;
-}
-
-// =======================================================
-//           VIEW: LECTURER PROFILE TAB
-// =======================================================
 class LecturerProfileTab extends StatelessWidget {
   const LecturerProfileTab({super.key});
 
@@ -3716,4 +2278,8 @@ class LecturerProfileTab extends StatelessWidget {
       ),
     );
   }
+}
+
+extension WidgetExt on Widget {
+  Widget height(double h) => SizedBox(height: h, child: this);
 }
