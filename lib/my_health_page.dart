@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'theme/app_colors.dart';
+import 'package:uthm/shared/theme/app_colors.dart';
 
 class MyHealthPage extends StatefulWidget {
   const MyHealthPage({super.key});

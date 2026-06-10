@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'home_page.dart' show kMapLinkA, kMapLinkB, kMapLinkC;
-import 'theme/app_colors.dart';
+import 'package:uthm/shared/home_page.dart'
+    show kMapLinkA, kMapLinkB, kMapLinkC;
+import 'package:uthm/shared/theme/app_colors.dart';
 
 class LecturerTimetablePage extends StatelessWidget {
   const LecturerTimetablePage({super.key});

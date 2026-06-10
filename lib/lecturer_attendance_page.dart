@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import 'theme/app_colors.dart';
+import 'package:uthm/shared/theme/app_colors.dart';
 
 class CheckInRecord {
   CheckInRecord({
@@ -51,11 +51,13 @@ class LecturerAttendancePage extends StatefulWidget {
     this.initialTabIndex = 0,
     this.initialStatus = AttendanceStatusFilter.all,
     this.initialType = 'All Types',
+    this.scannedEventRecord,
   });
 
   final int initialTabIndex;
   final AttendanceStatusFilter initialStatus;
   final String initialType;
+  final EventAttendanceRecord? scannedEventRecord;
 
   @override
   State<LecturerAttendancePage> createState() => _LecturerAttendancePageState();
@@ -204,7 +206,7 @@ class _LecturerAttendancePageState extends State<LecturerAttendancePage>
     'April 2026': {24},
   };
 
-  static const List<EventAttendanceRecord> _events = [
+  static const List<EventAttendanceRecord> _baseEvents = [
     EventAttendanceRecord(
       eventName: 'Programme Kerohanian',
       organizer: 'Student Affairs',
@@ -332,7 +334,12 @@ class _LecturerAttendancePageState extends State<LecturerAttendancePage>
       );
 
   List<EventAttendanceRecord> get _filteredEvents {
-    return _events.where((event) {
+    final events = [
+      if (widget.scannedEventRecord != null) widget.scannedEventRecord!,
+      ..._baseEvents,
+    ];
+
+    return events.where((event) {
       final statusMatches = switch (_statusFilter) {
         AttendanceStatusFilter.all => true,
         AttendanceStatusFilter.attend => event.attended,

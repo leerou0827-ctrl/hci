@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'lecturer_home_header.dart';
-import 'lecturer_home_sections.dart';
-import 'theme/app_colors.dart';
-import 'uthm_social_links.dart';
+import 'package:uthm/lecturer/lecturer_home_header.dart';
+import 'package:uthm/lecturer/lecturer_home_sections.dart';
+import 'package:uthm/shared/theme/app_colors.dart';
+import 'package:uthm/shared/uthm_social_links.dart';
 
 class LecturerDashboardPage extends StatelessWidget {
   const LecturerDashboardPage({super.key});

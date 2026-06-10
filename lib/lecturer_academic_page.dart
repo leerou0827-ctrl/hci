@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'academic_class.dart';
+import 'package:uthm/shared/academic_class.dart';
 
 const Color kPrimaryBlue = Color(0xFF0422A7);
 const Color kAccentBlue = Color(0xFF006BFF);

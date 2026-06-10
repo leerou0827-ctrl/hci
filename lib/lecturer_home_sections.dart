@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'home_page.dart' show showCampusMapMenu;
-import 'home_page2.dart' show ReservationPage;
-import 'lecturer_annual_leave_page.dart';
-import 'lecturer_attendance_page.dart';
-import 'lecturer_home_models.dart';
-import 'lecturer_movement_page.dart';
-import 'lecturer_salary_page.dart';
-import 'lecturer_timetable_page.dart';
-import 'my_health_page.dart';
-import 'theme/app_colors.dart';
+import 'package:uthm/shared/home_page.dart' show showCampusMapMenu;
+import 'package:uthm/shared/home_page2.dart' show ReservationPage;
+import 'package:uthm/lecturer/lecturer_annual_leave_page.dart';
+import 'package:uthm/lecturer/lecturer_attendance_page.dart';
+import 'package:uthm/lecturer/lecturer_home_models.dart';
+import 'package:uthm/lecturer/lecturer_movement_page.dart';
+import 'package:uthm/lecturer/lecturer_salary_page.dart';
+import 'package:uthm/lecturer/lecturer_timetable_page.dart';
+import 'package:uthm/lecturer/my_health_page.dart';
+import 'package:uthm/shared/theme/app_colors.dart';
 
 class LecturerFunctionPanel extends StatelessWidget {
   const LecturerFunctionPanel({super.key});

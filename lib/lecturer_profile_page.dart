@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:uthm/theme/app_colors.dart';
+import 'package:uthm/shared/theme/app_colors.dart';
 
-import 'profile/components/profile_buttons.dart';
-import 'profile/components/profile_cards.dart';
-import 'profile/components/profile_widgets.dart';
+import 'package:uthm/shared/logout_page.dart';
+import 'package:uthm/shared/profile/academic_calender_page/academic_calendar_buttons.dart';
+import 'package:uthm/shared/profile/components/profile_cards.dart';
+import 'package:uthm/shared/profile/components/profile_widgets.dart';
 
 class LecturerProfilePage extends StatelessWidget {
   const LecturerProfilePage({super.key});

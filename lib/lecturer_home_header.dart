@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'home_page.dart' show EmergencyContactsPage, VideoBackground;
-import 'theme/app_colors.dart';
+import 'package:uthm/shared/home_page.dart'
+    show EmergencyContactsPage, VideoBackground;
+import 'package:uthm/shared/theme/app_colors.dart';
 
 class LecturerHomeHeader extends StatelessWidget {
   const LecturerHomeHeader({super.key});

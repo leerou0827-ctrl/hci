@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
-import 'main.dart';
+import 'package:uthm/shared/academic_class.dart';
+import 'package:uthm/lecturer/lecturer_attendance_page.dart';
+import 'package:uthm/main.dart';
 
 // Color Constants
 const Color kPrimaryBlue = Color(0xFF0422A7);
@@ -101,9 +103,43 @@ class _ScanPageState extends State<ScanPage> {
 
   void _handleSubmit() {
     if (_codeController.text.isNotEmpty) {
-      setState(() {
-        _isSubmitted = true;
-      });
+      final role = mainGlobalKey.currentState?.role ?? DashboardRole.student;
+      if (role == DashboardRole.lecturer) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LecturerAttendancePage(
+              initialTabIndex: 1,
+              initialStatus: AttendanceStatusFilter.attend,
+              scannedEventRecord: EventAttendanceRecord(
+                eventName: 'QR Attendance Check-in',
+                organizer: 'Digital Classroom',
+                date: 'June 10 2026',
+                time: 'Just now',
+                location: 'Main Campus',
+                type: 'Academic',
+                attended: true,
+              ),
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AcademicClassPage(
+              initialDetailTab: "Attendance",
+              courseData: {
+                "code": "BIM30503",
+                "name": "Human Computer Interaction",
+                "lecturer": "Dr. Sofia Najwa",
+                "attendance": "100%",
+                "grade": "A+",
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 
